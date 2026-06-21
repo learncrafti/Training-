@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Adiroha Solutions - STEM OPT Training Portal</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --navy:#1F3864; --navy-light:#2E4D7A; --accent:#2E75B6; --accent-light:#E8F1FA;
+    --bg:#F4F6F9; --card:#FFFFFF; --border:#DCE3EB; --text:#1A2433; --muted:#5B6B7F;
+    --green:#1D9E75; --green-bg:#E1F5EE; --amber:#BA7517; --amber-bg:#FAEEDA;
+    --red:#A32D2D; --red-bg:#FCEBEB; --radius:10px; --radius-lg:14px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif; background:var(--bg); color:var(--text); line-height:1.5;}
+  #app{min-height:100vh;}
+  a{color:inherit;}
+  button{font-family:inherit; cursor:pointer;}
+  input,select,textarea{font-family:inherit;}
+
+  .login-wrap{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;}
+  .login-card{background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:40px; width:100%; max-width:400px; box-shadow:0 2px 16px rgba(20,30,50,0.06);}
+  .login-logo{max-width:120px; width:100%; height:auto; margin:0 auto 18px; display:block;}
+  .login-logo img{display:block; width:100%; height:auto;}
+  .login-card h1{font-size:20px; font-weight:700; color:var(--navy); margin-bottom:4px;}
+  .login-card .sub{color:var(--muted); font-size:13px; margin-bottom:24px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block; font-size:12px; font-weight:600; color:var(--muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:.03em;}
+  .field select, .field input{width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-size:14px; background:#fff;}
+  .field select:focus, .field input:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-light);}
+  .btn{display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:10px 18px; border-radius:8px; border:none; font-size:14px; font-weight:600; transition:opacity .15s;}
+  .btn:hover{opacity:.9;}
+  .btn-primary{background:var(--navy); color:#fff; width:100%; padding:12px;}
+  .btn-danger{background:var(--red); color:#fff;}
+  .btn-secondary{background:#fff; border:1px solid var(--border); color:var(--text);}
+  .btn-sm{padding:6px 12px; font-size:13px; width:auto;}
+  .login-note{margin-top:18px; font-size:11px; color:var(--muted); text-align:center; line-height:1.5;}
+  .role-toggle{display:flex; gap:8px; margin-bottom:18px;}
+  .role-btn{flex:1; padding:9px; border-radius:8px; border:1px solid var(--border); background:#fff; font-size:13px; font-weight:600; color:var(--muted);}
+  .role-btn.active{background:var(--navy); color:#fff; border-color:var(--navy);}
+  .error-text{color:var(--red); font-size:12px; margin-top:-6px; margin-bottom:10px;}
+
+  .topbar{background:var(--navy); color:#fff; padding:0 24px; height:56px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:10;}
+  .topbar-left{display:flex; align-items:center; gap:10px;}
+  .topbar-logo{width:30px; height:auto; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .topbar-logo img{width:100%; height:auto; display:block;}
+  .topbar-title{font-size:14px; font-weight:600;}
+  .topbar-title span{opacity:.65; font-weight:400; margin-left:8px;}
+  .topbar-right{display:flex; align-items:center; gap:14px; font-size:13px;}
+  .topbar-right .who{opacity:.85;}
+  .logout-link{background:rgba(255,255,255,0.12); border:none; color:#fff; padding:7px 13px; border-radius:7px; font-size:13px;}
+
+  .container{max-width:1100px; margin:0 auto; padding:28px 24px 60px;}
+  .page-head{display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:22px; flex-wrap:wrap; gap:12px;}
+  .page-head h2{font-size:22px; font-weight:700; color:var(--navy);}
+  .page-head .desc{color:var(--muted); font-size:13px; margin-top:3px;}
+
+  .stats-row{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:26px;}
+  .stat-card{background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:16px 18px;}
+  .stat-card .label{font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; font-weight:600;}
+  .stat-card .value{font-size:26px; font-weight:700; color:var(--navy); margin-top:4px;}
+  .stat-card .value.green{color:var(--green);} .stat-card .value.amber{color:var(--amber);}
+
+  .progress-track{height:8px; background:var(--border); border-radius:5px; overflow:hidden;}
+  .progress-fill{height:100%; background:var(--accent); border-radius:5px; transition:width .3s;}
+
+  .card{background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px 22px; margin-bottom:16px;}
+  .card h3{font-size:15px; font-weight:700; margin-bottom:14px; color:var(--navy);}
+  .card-head-row{display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;}
+  .card-head-row h3{margin-bottom:0;}
+
+  .module-row{display:flex; align-items:center; gap:14px; padding:13px 0; border-bottom:1px solid var(--border);}
+  .module-row:last-child{border-bottom:none;}
+  .module-num{width:30px; height:30px; border-radius:50%; background:var(--accent-light); color:var(--accent); font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .module-num.done{background:var(--green-bg); color:var(--green);}
+  .module-info{flex:1; min-width:0;}
+  .module-info .title{font-size:14px; font-weight:600;}
+  .module-info .meta{font-size:12px; color:var(--muted); margin-top:2px;}
+  .badge{display:inline-block; padding:3px 9px; border-radius:6px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; white-space:nowrap;}
+  .badge.done{background:var(--green-bg); color:var(--green);}
+  .badge.pending{background:var(--amber-bg); color:var(--amber);}
+  .badge.upcoming{background:#EEF0F3; color:var(--muted);}
+  .badge.overdue{background:var(--red-bg); color:var(--red);}
+  .badge.review{background:var(--accent-light); color:var(--accent);}
+  .badge.inactive{background:#EEF0F3; color:var(--muted);}
+
+  .emp-card{background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:18px 20px; margin-bottom:14px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
+  .emp-card .clickzone{display:flex; align-items:center; gap:16px; flex:1; cursor:pointer; min-width:240px;}
+  .avatar{width:42px; height:42px; border-radius:50%; background:var(--navy); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; flex-shrink:0;}
+  .emp-info{flex:1;}
+  .emp-info .name{font-weight:700; font-size:15px;}
+  .emp-info .role{font-size:12px; color:var(--muted);}
+  .emp-progress{width:160px;}
+  .emp-progress .pct{font-size:12px; color:var(--muted); margin-bottom:4px; display:flex; justify-content:space-between;}
+
+  .modal-overlay{position:fixed; inset:0; background:rgba(20,30,50,0.5); display:flex; align-items:center; justify-content:center; z-index:100; padding:20px; overflow-y:auto;}
+  .modal{background:#fff; border-radius:var(--radius-lg); padding:26px; width:100%; max-width:560px; max-height:88vh; overflow-y:auto;}
+  .modal h3{font-size:17px; font-weight:700; color:var(--navy); margin-bottom:4px;}
+  .modal .sub{font-size:13px; color:var(--muted); margin-bottom:18px;}
+  .modal-actions{display:flex; gap:10px; margin-top:20px; justify-content:flex-end; flex-wrap:wrap;}
+  textarea{width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-size:13px; resize:vertical; min-height:80px;}
+  .form-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .form-grid .full{grid-column:1/-1;}
+
+  .empty{text-align:center; padding:50px 20px; color:var(--muted);}
+  .empty .big{font-size:32px; margin-bottom:10px;}
+
+  .tabs{display:flex; gap:4px; border-bottom:1px solid var(--border); margin-bottom:22px; flex-wrap:wrap;}
+  .tab{padding:10px 16px; font-size:13px; font-weight:600; color:var(--muted); border-bottom:2px solid transparent; background:none; border-top:none; border-left:none; border-right:none;}
+  .tab.active{color:var(--navy); border-bottom-color:var(--navy);}
+
+  .toast{position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--navy); color:#fff; padding:11px 20px; border-radius:8px; font-size:13px; font-weight:500; z-index:200; box-shadow:0 4px 16px rgba(0,0,0,0.2); max-width:90vw; text-align:center;}
+  .toast.error{background:var(--red);}
+
+  table.log-table{width:100%; border-collapse:collapse; font-size:13px;}
+  table.log-table th{text-align:left; padding:9px 10px; background:var(--bg); color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.03em; border-bottom:1px solid var(--border);}
+  table.log-table td{padding:10px 10px; border-bottom:1px solid var(--border); vertical-align:top;}
+  table.log-table tr:last-child td{border-bottom:none;}
+
+  .icon-btn{background:none; border:none; color:var(--muted); padding:6px 8px; border-radius:6px; font-size:13px;}
+  .icon-btn:hover{background:var(--bg); color:var(--text);}
+
+  .spinner{width:28px; height:28px; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin .7s linear infinite; margin:0 auto;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .loading-screen{display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; gap:14px; color:var(--muted); font-size:13px;}
+
+  @media (max-width:640px){
+    .container{padding:18px 14px 50px;}
+    .emp-progress{width:100%;}
+    .form-grid{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* =====================================================================
+   Adiroha Solutions - STEM OPT Training Portal (Supabase-backed)
+   ===================================================================== */
+
+// ---------- Supabase connection ----------
+const SUPABASE_URL = "https://omogfaxkqdpzdahkutzl.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_dsUHV-CugLxk8c6Fs9S1Qw_K8ImpEI1";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const CURRICULUM = [
+"Java Fundamentals - Syntax, Data Types & Operators",
+"Control Flow - Conditionals & Loops",
+"Object-Oriented Programming I - Classes & Objects",
+"Object-Oriented Programming II - Inheritance & Polymorphism",
+"Encapsulation, Abstraction & Interfaces",
+"Exception Handling in Java",
+"Java Collections Framework I - List, Set",
+"Java Collections Framework II - Map, Queue",
+"Generics in Java",
+"Multithreading & Concurrency Basics",
+"File I/O & Serialization",
+"Java 8+ Features - Lambdas & Streams",
+"Functional Interfaces & Method References",
+"JDBC - Connecting Java to Databases",
+"SQL Fundamentals for Java Developers",
+"Maven & Project Build Lifecycle",
+"Introduction to J2EE / Jakarta EE Architecture",
+"Servlets I - Lifecycle & Request Handling",
+"Servlets II - Session Management",
+"JavaServer Pages (JSP) Fundamentals",
+"JSP Standard Tag Library (JSTL) & EL",
+"MVC Architecture in J2EE",
+"Enterprise JavaBeans (EJB) Overview",
+"Java Persistence API (JPA) Fundamentals",
+"Hibernate ORM I - Configuration & Mapping",
+"Hibernate ORM II - Relationships & Queries",
+"Spring Framework Fundamentals - IoC & DI",
+"Spring Configuration - Annotations & Beans",
+"Spring MVC I - Controllers & Views",
+"Spring MVC II - Form Handling & Validation",
+"Spring Boot Fundamentals",
+"Spring Boot REST API Development",
+"Spring Data JPA",
+"Spring Security Basics",
+"RESTful Web Services in Java",
+"SOAP Web Services Overview",
+"Unit Testing with JUnit & Mockito",
+"Application Servers - Tomcat & WildFly",
+"Logging, Debugging & Application Monitoring",
+"Capstone Review - Building a Full J2EE Application"
+];
+
+let CURRENT_USER = null; // {role:'employee'|'supervisor', employee: {...} | null}
+let activeTab = "overview";
+let EMPLOYEES_CACHE = []; // [{...employee, modules:[...]}]
+
+const root = document.getElementById("app");
+
+function addMonths(dateStr, n){
+  const d = new Date(dateStr+"T00:00:00");
+  d.setMonth(d.getMonth()+n);
+  return d.toISOString().slice(0,10);
+}
+function addDays(dateStr, n){
+  const d = new Date(dateStr+"T00:00:00");
+  d.setDate(d.getDate()+n);
+  return d.toISOString().slice(0,10);
+}
+// Module i (0-based) due date: 2 modules per month, second one 14 days after the first.
+// Module 0 -> start+0mo+0d, Module 1 -> start+0mo+14d, Module 2 -> start+1mo+0d, Module 3 -> start+1mo+14d, ...
+function dueDateForModule(startDate, zeroBasedIndex){
+  const monthOffset = Math.floor(zeroBasedIndex/2);
+  const isSecondInMonth = (zeroBasedIndex % 2) === 1;
+  const base = addMonths(startDate, monthOffset);
+  return isSecondInMonth ? addDays(base, 14) : base;
+}
+function fmtDate(dateStr){
+  if(!dateStr) return "-";
+  const d = new Date(dateStr+"T00:00:00");
+  return d.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
+}
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function initials(name){ return name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase(); }
+
+function showToast(msg, isError){
+  const t = document.createElement("div");
+  t.className = "toast" + (isError ? " error" : "");
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 2600);
+}
+
+// ================= DATA LAYER (Supabase) =================
+async function dbGetSupervisorPassword(){
+  const {data, error} = await sb.from("supervisor").select("password").eq("id",1).single();
+  if(error){ console.error(error); return null; }
+  return data.password;
+}
+async function dbSetSupervisorPassword(newPass){
+  const {error} = await sb.from("supervisor").update({password:newPass}).eq("id",1);
+  if(error){ showToast("Failed to update password", true); return false; }
+  return true;
+}
+async function dbGetEmployeeByUsername(username){
+  const {data, error} = await sb.from("employees").select("*").eq("username", username).eq("active", true).maybeSingle();
+  if(error){ console.error(error); return null; }
+  return data;
+}
+async function dbGetAllEmployees(){
+  const {data, error} = await sb.from("employees").select("*").order("created_at", {ascending:true});
+  if(error){ console.error(error); return []; }
+  return data;
+}
+async function dbGetModules(employeeId){
+  const {data, error} = await sb.from("modules").select("*").eq("employee_id", employeeId).order("module_index", {ascending:true});
+  if(error){ console.error(error); return []; }
+  return data;
+}
+async function dbCreateEmployeeWithModules(emp){
+  const {data, error} = await sb.from("employees").insert({
+    username: emp.username, password: emp.password, name: emp.name,
+    role: emp.role, start_date: emp.startDate, email: emp.email || null, active: true
+  }).select().single();
+  if(error){ showToast(error.message.includes("duplicate") ? "Username already taken" : "Failed to create employee", true); return null; }
+
+  const modules = CURRICULUM.map((title,i)=>({
+    employee_id: data.id,
+    module_index: i+1,
+    title,
+    due_date: dueDateForModule(emp.startDate, i),
+    status: "upcoming"
+  }));
+  const {error: modErr} = await sb.from("modules").insert(modules);
+  if(modErr){ showToast("Employee created but modules failed", true); console.error(modErr); }
+  return data;
+}
+async function dbUpdateEmployee(id, fields){
+  const {error} = await sb.from("employees").update(fields).eq("id", id);
+  if(error){ showToast("Update failed: "+error.message, true); return false; }
+  return true;
+}
+async function dbDeleteEmployee(id){
+  const {error} = await sb.from("employees").delete().eq("id", id);
+  if(error){ showToast("Delete failed", true); return false; }
+  return true;
+}
+async function dbUpdateModule(id, fields){
+  const {error} = await sb.from("modules").update(fields).eq("id", id);
+  if(error){ showToast("Update failed", true); return false; }
+  return true;
+}
+async function dbSetModuleVideoUrl(moduleId, url){
+  const {error} = await sb.from("modules").update({video_url: url || null}).eq("id", moduleId);
+  if(error){ showToast("Failed to save link", true); return false; }
+  return true;
+}
+async function dbBulkSetVideoUrls(employeeId, urlsByIndex){
+  const updates = Object.entries(urlsByIndex).map(([idx, url]) =>
+    sb.from("modules").update({video_url: url || null}).eq("employee_id", employeeId).eq("module_index", parseInt(idx))
+  );
+  await Promise.all(updates);
+}
+async function dbBulkSetVideoUrlsAllEmployees(urlsByIndex){
+  const emps = await dbGetAllEmployees();
+  for(const emp of emps){
+    await dbBulkSetVideoUrls(emp.id, urlsByIndex);
+  }
+}
+async function dbResetEmployeeProgress(employeeId, startDate){
+  const modules = CURRICULUM.map((title,i)=>({
+    module_index: i+1, due_date: dueDateForModule(startDate, i),
+    status: "upcoming", reflection: null, completed_date: null,
+    supervisor_signoff: false, signoff_date: null
+  }));
+  for(const m of modules){
+    await sb.from("modules").update({
+      due_date: m.due_date, status: m.status, reflection: m.reflection,
+      completed_date: m.completed_date, supervisor_signoff: m.supervisor_signoff, signoff_date: m.signoff_date
+    }).eq("employee_id", employeeId).eq("module_index", m.module_index);
+  }
+}
+
+async function loadEmployeesWithModules(){
+  const emps = await dbGetAllEmployees();
+  const full = [];
+  for(const e of emps){
+    const modules = await dbGetModules(e.id);
+    full.push({...e, modules});
+  }
+  EMPLOYEES_CACHE = full;
+  return full;
+}
+
+// ---------- Derived stats ----------
+function empStats(emp){
+  const total = emp.modules.length || 40;
+  const completed = emp.modules.filter(m=>m.status==="completed").length;
+  const pending = emp.modules.filter(m=>m.status==="pending_review").length;
+  const overdue = emp.modules.filter(m=> m.status!=="completed" && m.due_date < todayStr()).length;
+  const pct = total ? Math.round((completed/total)*100) : 0;
+  return {total, completed, pending, overdue, pct};
+}
+function moduleStatusBadge(m){
+  if(m.status==="completed") return `<span class="badge done">Completed</span>`;
+  if(m.status==="pending_review") return `<span class="badge review">Awaiting sign-off</span>`;
+  if(m.due_date < todayStr()) return `<span class="badge overdue">Overdue</span>`;
+  return `<span class="badge upcoming">Upcoming</span>`;
+}
+
+// ================= RENDER: LOGIN =================
+function renderLogin(){
+  root.innerHTML = `
+    <div class="login-wrap">
+      <div class="login-card">
+        <div class="login-logo"><img src="data:image/jpeg;base64,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5J5u2z9PlVY4DmkWx4tMsb0tuF9plB9x1yP4ocSEcoTvry66nt51vHOINghPBaZQlqSQf82ilJ+hUQKt6HG/g443052Ht4Odmbk3LdkttbK3AblYupw8Fr8wf3qr84OEJY2vYJcV3B9arvi3DduWW3WCytpDjrC0JU6rkSPmfIVLsN4nDEsTtlztXCpE9iW2HUrnT1AqB316JPpUXyu+wMueuV6dx5zH5QiuK8JDvitLV06bOiPPyrv3dqaWqlfE8ECRoaDdhtfiA4n3I3hUsWGSRv74EZdfwqOufDHOLXal3VywvybenqqZBUmS0keqi2Tyj+VqojXa3B6JcnIqHoUSYog/fYbV/aBWDx04G2+/R5F/sdoFrvyU+ItDTPhNTD3IWkABKz5KGtn72+45DGexrqN5bSyiQ620d7m/opcOLNc7ZlbbnuXG9K+nG1tOqacQpC0EpUlQ0QR3Br5riVcJSlKIlKUoiUpSiJSlKItm/kN7kQmYTlzlCKw2Gmo6HCltCR6JB16knzJpAyTIbWsLtl9uUNQ7GPKW2fyNaylenOLjdxusAW0UuHErLHXUOXO4fpJSegXLHM5r/rBpX4ms48RI7sciRZXVOeqZiwPzG6gdK2R1EsX9t5HQkJYLOvN1kXu+SLpL/wBK8QT1J7AAdT1PQDqawaUrSspSlKIlKUoiUpSiJSlKIlKUoiUpSiJSlKIptA4glqDGZuFuckuRmER21okqQORI0kcvUDoB2+dfEriNdVqH2CKzGCTsFxSnyD6+/wBPyqGUrcamYtDC82G65ssWGqkM/PM0uaPDnZTdnW9a8L7UtLY+SEkAfhWqYu91iv8AjxrlMZd3vnbeUlX4g1h0rSDY3CyveZMkz5zsyY6XX3Vc7jh7qV5k/E14UpWXOLiSTmUAtkEpSlYRKUpREpSlESlKURKUpREpSlESlKURKUpREpSlESlKURKUpREpSlESlKURKUpREpSlESlKURKUpREpSlESlKURKUpREpSlESlKURKUpREpSlESlKURKUpREpSlESlKURKUpREpSlESlKURKUpREpSlESlKURKUpREpSlESlKURKUpREpSlESlKURKUpREpSlESlKURKUpREpSlESlKURKUpREpSlESlKURKUpREpSlESlKURKUpRF//9k=" alt="Adiroha Solutions" /></div>
+        <div class="sub" style="margin-bottom:24px;">STEM OPT Training Portal</div>
+
+        <div class="role-toggle">
+          <button class="role-btn active" id="roleEmp" type="button">Employee</button>
+          <button class="role-btn" id="roleSup" type="button">Supervisor</button>
+        </div>
+
+        <div id="loginFields"></div>
+        <div class="error-text" id="loginError" style="display:none;"></div>
+        <button class="btn btn-primary" id="loginBtn" style="margin-top:6px;">Sign in</button>
+        <div class="login-note">This portal tracks individual STEM OPT training progress for I-983 compliance recordkeeping. Each employee has a separate, individually tracked, password-protected profile.</div>
+      </div>
+    </div>
+  `;
+
+  let role = "employee";
+  const fieldsEl = document.getElementById("loginFields");
+  const errEl = document.getElementById("loginError");
+
+  function renderFields(){
+    errEl.style.display = "none";
+    if(role==="employee"){
+      fieldsEl.innerHTML = `
+        <div class="field"><label>Username</label><input type="text" id="empUser" placeholder="e.g. jsmith" /></div>
+        <div class="field"><label>Password</label><input type="password" id="empPass" placeholder="Enter password" /></div>
+      `;
+    } else {
+      fieldsEl.innerHTML = `
+        <div class="field"><label>Supervisor password</label><input type="password" id="supPass" placeholder="Enter password" /></div>
+      `;
+    }
+  }
+  renderFields();
+
+  document.getElementById("roleEmp").onclick = ()=>{ role="employee"; document.getElementById("roleEmp").classList.add("active"); document.getElementById("roleSup").classList.remove("active"); renderFields(); };
+  document.getElementById("roleSup").onclick = ()=>{ role="supervisor"; document.getElementById("roleSup").classList.add("active"); document.getElementById("roleEmp").classList.remove("active"); renderFields(); };
+
+  document.getElementById("loginBtn").onclick = async ()=>{
+    const btn = document.getElementById("loginBtn");
+    btn.textContent = "Signing in..."; btn.disabled = true;
+    try{
+      if(role==="employee"){
+        const username = document.getElementById("empUser").value.trim();
+        const password = document.getElementById("empPass").value;
+        const emp = await dbGetEmployeeByUsername(username);
+        if(!emp || emp.password !== password){
+          errEl.textContent = "Incorrect username or password.";
+          errEl.style.display = "block";
+        } else {
+          emp.modules = await dbGetModules(emp.id);
+          CURRENT_USER = {role:"employee", employee: emp};
+          activeTab = "videos";
+          render();
+        }
+      } else {
+        const pass = document.getElementById("supPass").value;
+        const realPass = await dbGetSupervisorPassword();
+        if(pass === realPass){
+          CURRENT_USER = {role:"supervisor", employee:null};
+          activeTab = "overview";
+          await loadEmployeesWithModules();
+          render();
+        } else {
+          errEl.textContent = "Incorrect password.";
+          errEl.style.display = "block";
+        }
+      }
+    } catch(e){
+      console.error(e);
+      errEl.textContent = "Connection error. Check your internet connection and try again.";
+      errEl.style.display = "block";
+    } finally {
+      btn.textContent = "Sign in"; btn.disabled = false;
+    }
+  };
+}
+
+// ================= TOPBAR =================
+function renderTopbar(title){
+  const who = CURRENT_USER.role==="employee" ? CURRENT_USER.employee.name : "Supervisor / Evaluator";
+  return `
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-logo"><img src="data:image/jpeg;base64,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" alt="Adiroha" /></div>
+        <div class="topbar-title">Adiroha Solutions <span>${title}</span></div>
+      </div>
+      <div class="topbar-right">
+        <span class="who">${who}</span>
+        <button class="logout-link" id="logoutBtn">Sign out</button>
+      </div>
+    </div>
+  `;
+}
+function wireLogout(){
+  document.getElementById("logoutBtn").onclick = ()=>{ CURRENT_USER=null; render(); };
+}
+
+// ================= EMPLOYEE VIEW =================
+function endOfCurrentMonth(){
+  const now = new Date();
+  const d = new Date(now.getFullYear(), now.getMonth()+1, 0); // last day of this month
+  return d.toISOString().slice(0,10);
+}
+function isModuleVisibleToEmployee(m){
+  return m.due_date <= endOfCurrentMonth();
+}
+
+async function renderEmployeeView(){
+  const emp = CURRENT_USER.employee;
+  emp.modules = await dbGetModules(emp.id);
+  const stats = empStats(emp);
+  const visibleModules = emp.modules.filter(isModuleVisibleToEmployee);
+  const hiddenCount = emp.modules.length - visibleModules.length;
+
+  root.innerHTML = `
+    ${renderTopbar("Training Portal")}
+    <div class="container">
+      <div class="page-head">
+        <div><h2>Hi, ${emp.name}</h2><div class="desc">${emp.role} &middot; STEM OPT start: ${fmtDate(emp.start_date)}</div></div>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card"><div class="label">Overall progress</div><div class="value">${stats.pct}%</div></div>
+        <div class="stat-card"><div class="label">Completed</div><div class="value green">${stats.completed} / ${stats.total}</div></div>
+        <div class="stat-card"><div class="label">Awaiting sign-off</div><div class="value amber">${stats.pending}</div></div>
+        <div class="stat-card"><div class="label">Overdue</div><div class="value ${stats.overdue>0?'amber':''}">${stats.overdue}</div></div>
+      </div>
+      <div class="card"><h3>Overall completion</h3><div class="progress-track"><div class="progress-fill" style="width:${stats.pct}%"></div></div></div>
+      <div class="card">
+        <h3>Your training modules</h3>
+        <div id="moduleList"></div>
+        ${hiddenCount > 0 ? `<p style="font-size:12px; color:var(--muted); margin-top:14px;">${hiddenCount} upcoming module(s) will appear here as their assigned month arrives.</p>` : ""}
+      </div>
+    </div>
+  `;
+
+  const list = document.getElementById("moduleList");
+  if(visibleModules.length===0){
+    list.innerHTML = `<div class="empty" style="padding:30px 10px;">No modules due yet. Check back soon.</div>`;
+  }
+  visibleModules.forEach(m=>{
+    const row = document.createElement("div");
+    row.className = "module-row";
+    row.style.flexWrap = "wrap";
+    row.innerHTML = `
+      <div class="module-num ${m.status==='completed'?'done':''}">${m.module_index}</div>
+      <div class="module-info">
+        <div class="title">${m.title}</div>
+        <div class="meta">Due ${fmtDate(m.due_date)}${m.completed_date ? ' &middot; Completed '+fmtDate(m.completed_date):''}${m.status==='pending_review' ? ' &middot; Pending supervisor review':''}${m.status==='completed' && m.signoff_date ? ' &middot; Signed off '+fmtDate(m.signoff_date):''}</div>
+        ${m.reflection ? `<div style="margin-top:8px; padding:10px 12px; background:var(--bg); border-radius:8px; font-size:13px; color:var(--text); border-left:3px solid var(--accent);"><strong style="font-size:11px; text-transform:uppercase; letter-spacing:.03em; color:var(--muted); display:block; margin-bottom:4px;">Your summary</strong>${m.reflection}</div>` : ""}
+      </div>
+      <div>${moduleStatusBadge(m)}</div>
+      <div style="display:flex; gap:8px;">
+        ${m.video_url ? `<a href="${m.video_url}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="text-decoration:none;">Watch video</a>` : `<span style="font-size:11px; color:var(--muted); white-space:nowrap;">Link coming soon</span>`}
+        ${m.status==="upcoming" ? `<button class="btn btn-primary btn-sm" data-id="${m.id}">Mark watched</button>` : ""}
+      </div>
+    `;
+    list.appendChild(row);
+  });
+  list.querySelectorAll("button[data-id]").forEach(btn=>{
+    btn.onclick = ()=> openReflectionModal(btn.dataset.id);
+  });
+  wireLogout();
+}
+
+function openReflectionModal(moduleId){
+  const emp = CURRENT_USER.employee;
+  const m = emp.modules.find(x=>x.id===moduleId);
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay";
+  overlay.innerHTML = `
+    <div class="modal">
+      <h3>Module ${m.module_index}: ${m.title}</h3>
+      <div class="sub">Briefly describe what you learned and how it applies to your work. This is reviewed by your supervisor as part of your I-983 training record.</div>
+      <div class="field"><label>Reflection / summary</label><textarea id="reflectionText" placeholder="e.g. This module covered... I plan to apply this by..."></textarea></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="cancelBtn">Cancel</button>
+        <button class="btn btn-primary" id="submitBtn" style="width:auto;">Submit for review</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  document.getElementById("cancelBtn").onclick = ()=> overlay.remove();
+  document.getElementById("submitBtn").onclick = async ()=>{
+    const text = document.getElementById("reflectionText").value.trim();
+    if(text.length < 10){ showToast("Please add a short reflection before submitting", true); return; }
+    const ok = await dbUpdateModule(m.id, {status:"pending_review", reflection:text, completed_date: todayStr()});
+    if(ok){ overlay.remove(); showToast("Submitted. Awaiting supervisor sign-off."); renderEmployeeView(); }
+  };
+}
+
+// ================= SUPERVISOR VIEW =================
+async function renderSupervisorView(){
+  root.innerHTML = `
+    ${renderTopbar("Supervisor Dashboard")}
+    <div class="container">
+      <div class="page-head">
+        <div><h2>Supervisor Dashboard</h2><div class="desc">Manage employees, review submissions, and export records</div></div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-secondary btn-sm" id="exportAllBtn">Export company log (CSV)</button>
+          <button class="btn btn-primary btn-sm" id="addEmpBtn">+ Add employee</button>
+        </div>
+      </div>
+      <div class="tabs">
+        <button class="tab ${activeTab==='overview'?'active':''}" data-tab="overview">Employees</button>
+        <button class="tab ${activeTab==='review'?'active':''}" data-tab="review">Pending review</button>
+        <button class="tab ${activeTab==='content'?'active':''}" data-tab="content">Course content</button>
+        <button class="tab ${activeTab==='settings'?'active':''}" data-tab="settings">Settings</button>
+      </div>
+      <div id="tabContent"></div>
+    </div>
+  `;
+  wireLogout();
+  document.getElementById("exportAllBtn").onclick = exportCompanyCSV;
+  document.getElementById("addEmpBtn").onclick = ()=> openEmployeeForm(null);
+  root.querySelectorAll(".tab").forEach(t=> t.onclick = ()=>{ activeTab = t.dataset.tab; renderSupervisorView(); });
+
+  const content = document.getElementById("tabContent");
+  content.innerHTML = `<div class="loading-screen" style="min-height:200px;"><div class="spinner"></div>Loading...</div>`;
+  await loadEmployeesWithModules();
+
+  if(activeTab==="overview") renderOverviewTab(content);
+  else if(activeTab==="review") renderReviewTab(content);
+  else if(activeTab==="content") renderContentTab(content);
+  else renderSettingsTab(content);
+}
+
+function renderOverviewTab(content){
+  if(EMPLOYEES_CACHE.length===0){
+    content.innerHTML = `<div class="card"><div class="empty"><div class="big">+</div>No employees yet. Click "Add employee" to get started.</div></div>`;
+    return;
+  }
+  let html = "";
+  EMPLOYEES_CACHE.forEach(emp=>{
+    const stats = empStats(emp);
+    html += `
+      <div class="emp-card">
+        <div class="clickzone" data-emp="${emp.id}">
+          <div class="avatar">${initials(emp.name)}</div>
+          <div class="emp-info">
+            <div class="name">${emp.name} ${!emp.active ? '<span class="badge inactive">Inactive</span>':''}</div>
+            <div class="role">${emp.role} &middot; Started ${fmtDate(emp.start_date)} &middot; @${emp.username}</div>
+          </div>
+          <div class="emp-progress">
+            <div class="pct"><span>${stats.completed}/${stats.total} modules</span><span>${stats.pct}%</span></div>
+            <div class="progress-track"><div class="progress-fill" style="width:${stats.pct}%"></div></div>
+          </div>
+          ${stats.pending>0 ? `<span class="badge review">${stats.pending} to review</span>` : ""}
+          ${stats.overdue>0 ? `<span class="badge overdue">${stats.overdue} overdue</span>` : ""}
+        </div>
+        <button class="icon-btn" data-edit="${emp.id}">Edit</button>
+      </div>
+    `;
+  });
+  content.innerHTML = html;
+  content.querySelectorAll(".clickzone").forEach(c=> c.onclick = ()=> openEmployeeDetail(c.dataset.emp));
+  content.querySelectorAll("[data-edit]").forEach(b=> b.onclick = (e)=>{ e.stopPropagation(); openEmployeeForm(b.dataset.edit); });
+}
+
+function renderReviewTab(content){
+  const pendingItems = [];
+  EMPLOYEES_CACHE.forEach(emp=> emp.modules.filter(m=>m.status==="pending_review").forEach(m=> pendingItems.push({emp,m})));
+
+  if(pendingItems.length===0){
+    content.innerHTML = `<div class="card"><div class="empty"><div class="big">&#10003;</div>All caught up &mdash; no modules awaiting review.</div></div>`;
+    return;
+  }
+  content.innerHTML = `<div class="card"><h3>Modules awaiting your sign-off (${pendingItems.length})</h3><div id="reviewList"></div></div>`;
+  const list = document.getElementById("reviewList");
+  pendingItems.forEach(({emp,m})=>{
+    const row = document.createElement("div");
+    row.className = "module-row";
+    row.innerHTML = `
+      <div class="module-num">${m.module_index}</div>
+      <div class="module-info">
+        <div class="title">${emp.name} &mdash; ${m.title}</div>
+        <div class="meta">Submitted ${fmtDate(m.completed_date)} &middot; "${(m.reflection||"").slice(0,90)}${(m.reflection||"").length>90?'...':''}"</div>
+      </div>
+      <button class="btn btn-primary btn-sm" data-mod="${m.id}">Sign off</button>
+    `;
+    list.appendChild(row);
+  });
+  list.querySelectorAll("button[data-mod]").forEach(btn=>{
+    btn.onclick = async ()=>{
+      btn.disabled = true; btn.textContent = "Saving...";
+      const ok = await dbUpdateModule(btn.dataset.mod, {status:"completed", supervisor_signoff:true, signoff_date: todayStr()});
+      if(ok){ showToast("Signed off"); renderSupervisorView(); }
+    };
+  });
+}
+
+let contentSelectedEmpIds = []; // employees currently targeted by the content tab
+
+function renderContentTab(content){
+  if(EMPLOYEES_CACHE.length===0){
+    content.innerHTML = `<div class="card"><div class="empty"><div class="big">&#9888;</div>Add at least one employee first, then come back here to attach video links.</div></div>`;
+    return;
+  }
+  // default selection: all employees, first time only
+  if(contentSelectedEmpIds.length===0){
+    contentSelectedEmpIds = EMPLOYEES_CACHE.map(e=>e.id);
+  }
+  // keep selection valid if an employee was deleted
+  contentSelectedEmpIds = contentSelectedEmpIds.filter(id=> EMPLOYEES_CACHE.some(e=>e.id===id));
+
+  const selectedEmps = EMPLOYEES_CACHE.filter(e=>contentSelectedEmpIds.includes(e.id));
+  // Reference list of titles/links: use the first selected employee, or first overall if none selected
+  const reference = selectedEmps[0] || EMPLOYEES_CACHE[0];
+  const linkedCount = reference.modules.filter(m=>m.video_url).length;
+
+  content.innerHTML = `
+    <div class="card">
+      <h3>Apply to which employee(s)?</h3>
+      <p style="font-size:13px; color:var(--muted); margin-bottom:12px;">Choose one, several, or all employees. Video links and title edits below will only apply to the employees you select here.</p>
+      <div id="empCheckboxes" style="display:flex; flex-direction:column; gap:8px; margin-bottom:10px;"></div>
+      <div style="display:flex; gap:10px;">
+        <button class="icon-btn" id="selectAllBtn" style="border:1px solid var(--border);">Select all</button>
+        <button class="icon-btn" id="selectNoneBtn" style="border:1px solid var(--border);">Clear selection</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head-row"><h3>Bulk-add video links</h3><span style="font-size:12px; color:var(--muted);">${linkedCount}/40 linked for ${reference.name}</span></div>
+      <p style="font-size:13px; color:var(--muted); margin-bottom:12px;">Paste one link per line, in module order (1 to 40). Applies only to the employee(s) selected above. Leave a line blank to skip a module.</p>
+      <textarea id="bulkLinks" style="min-height:160px; font-family:monospace; font-size:12px;" placeholder="https://...module-1-link
+https://...module-2-link
+https://...module-3-link
+..."></textarea>
+      <div class="modal-actions" style="justify-content:flex-end;">
+        <button class="btn btn-primary" id="saveBulkBtn" style="width:auto;">Save all links to selected employee(s)</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Edit individual modules</h3>
+      <p style="font-size:13px; color:var(--muted); margin-bottom:6px;">Titles and links shown below are from <strong>${reference.name}</strong>. Edits apply to whichever employee(s) you have selected above.</p>
+      <div id="moduleLinkList"></div>
+    </div>
+  `;
+
+  // Render employee checkboxes
+  const cbWrap = document.getElementById("empCheckboxes");
+  EMPLOYEES_CACHE.forEach(e=>{
+    const row = document.createElement("label");
+    row.style.cssText = "display:flex; align-items:center; gap:10px; font-size:13px; cursor:pointer;";
+    row.innerHTML = `<input type="checkbox" data-emp="${e.id}" ${contentSelectedEmpIds.includes(e.id)?'checked':''} style="width:auto;"/> ${e.name} <span style="color:var(--muted);">(@${e.username})</span>`;
+    cbWrap.appendChild(row);
+  });
+  cbWrap.querySelectorAll('input[type="checkbox"]').forEach(cb=>{
+    cb.onchange = ()=>{
+      const id = cb.dataset.emp;
+      if(cb.checked){ if(!contentSelectedEmpIds.includes(id)) contentSelectedEmpIds.push(id); }
+      else { contentSelectedEmpIds = contentSelectedEmpIds.filter(x=>x!==id); }
+      renderContentTab(content);
+    };
+  });
+  document.getElementById("selectAllBtn").onclick = ()=>{ contentSelectedEmpIds = EMPLOYEES_CACHE.map(e=>e.id); renderContentTab(content); };
+  document.getElementById("selectNoneBtn").onclick = ()=>{ contentSelectedEmpIds = []; renderContentTab(content); };
+
+  document.getElementById("saveBulkBtn").onclick = async ()=>{
+    if(contentSelectedEmpIds.length===0){ showToast("Select at least one employee first", true); return; }
+    const lines = document.getElementById("bulkLinks").value.split("\n");
+    const urlsByIndex = {};
+    lines.forEach((line, i)=>{
+      if(i < 40){
+        const trimmed = line.trim();
+        if(trimmed) urlsByIndex[i+1] = trimmed;
+      }
+    });
+    if(Object.keys(urlsByIndex).length===0){ showToast("Paste at least one link first", true); return; }
+    const btn = document.getElementById("saveBulkBtn");
+    btn.disabled = true; btn.textContent = "Saving...";
+    for(const empId of contentSelectedEmpIds){
+      await dbBulkSetVideoUrls(empId, urlsByIndex);
+    }
+    showToast(`Saved ${Object.keys(urlsByIndex).length} link(s) to ${contentSelectedEmpIds.length} employee(s)`);
+    renderSupervisorView();
+  };
+
+  const list = document.getElementById("moduleLinkList");
+  reference.modules.forEach(m=>{
+    const row = document.createElement("div");
+    row.className = "module-row";
+    row.innerHTML = `
+      <div class="module-num ${m.video_url ? 'done':''}">${m.module_index}</div>
+      <div class="module-info">
+        <div class="title">${m.title}</div>
+        <div class="meta" style="word-break:break-all;">${m.video_url ? m.video_url : 'No link set'}</div>
+      </div>
+      <button class="icon-btn" data-idx="${m.module_index}" data-title="${m.title.replace(/"/g,'&quot;')}" data-link="${(m.video_url||'').replace(/"/g,'&quot;')}">Edit</button>
+    `;
+    list.appendChild(row);
+  });
+  list.querySelectorAll("button[data-idx]").forEach(btn=>{
+    btn.onclick = ()=> openModuleEditor(parseInt(btn.dataset.idx), btn.dataset.title, btn.dataset.link);
+  });
+}
+
+function openModuleEditor(moduleIndex, title, link){
+  if(contentSelectedEmpIds.length===0){ showToast("Select at least one employee first", true); return; }
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay";
+  overlay.innerHTML = `
+    <div class="modal">
+      <h3>Module ${moduleIndex}</h3>
+      <div class="sub">Changes apply to ${contentSelectedEmpIds.length} selected employee(s).</div>
+      <div class="field"><label>Module title</label><input type="text" id="editTitleInput" value="${title.replace(/&quot;/g,'"')}" /></div>
+      <div class="field"><label>Video URL</label><input type="text" id="editLinkInput" value="${link.replace(/&quot;/g,'"')}" placeholder="https://..." /></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="cancelBtn">Cancel</button>
+        <button class="btn btn-primary" id="saveBtn" style="width:auto;">Save changes</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  document.getElementById("cancelBtn").onclick = ()=> overlay.remove();
+  document.getElementById("saveBtn").onclick = async ()=>{
+    const newTitle = document.getElementById("editTitleInput").value.trim();
+    const newLink = document.getElementById("editLinkInput").value.trim();
+    if(!newTitle){ showToast("Title can't be empty", true); return; }
+    const btn = document.getElementById("saveBtn");
+    btn.disabled = true; btn.textContent = "Saving...";
+    for(const empId of contentSelectedEmpIds){
+      await sb.from("modules").update({title:newTitle, video_url:newLink||null}).eq("employee_id", empId).eq("module_index", moduleIndex);
+    }
+    showToast("Module updated");
+    overlay.remove();
+    renderSupervisorView();
+  };
+}
+
+function renderSettingsTab(content){
+  content.innerHTML = `
+    <div class="card" style="max-width:420px;">
+      <h3>Change supervisor password</h3>
+      <div class="field"><label>New password</label><input type="password" id="newSupPass" placeholder="Enter new password" /></div>
+      <button class="btn btn-primary" id="saveSupPass" style="width:auto;">Update password</button>
+    </div>
+  `;
+  document.getElementById("saveSupPass").onclick = async ()=>{
+    const val = document.getElementById("newSupPass").value;
+    if(val.length < 4){ showToast("Password too short", true); return; }
+    const ok = await dbSetSupervisorPassword(val);
+    if(ok){ showToast("Supervisor password updated"); document.getElementById("newSupPass").value=""; }
+  };
+}
+
+// ---------- Employee detail modal (view full transcript) ----------
+function openEmployeeDetail(empId){
+  const emp = EMPLOYEES_CACHE.find(e=>e.id===empId);
+  const stats = empStats(emp);
+  const withReflections = emp.modules.filter(m=>m.reflection);
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay";
+  overlay.innerHTML = `
+    <div class="modal" style="max-width:700px;">
+      <h3>${emp.name}</h3>
+      <div class="sub">${emp.email ? emp.email+' &middot; ' : ''}${emp.role} &middot; STEM OPT start ${fmtDate(emp.start_date)} &middot; ${stats.completed}/${stats.total} completed (${stats.pct}%)</div>
+      <table class="log-table">
+        <thead><tr><th>#</th><th>Module</th><th>Due</th><th>Status</th><th>Signed off</th><th>Video</th></tr></thead>
+        <tbody>
+          ${emp.modules.map(m=>`<tr><td>${m.module_index}</td><td>${m.title}</td><td>${fmtDate(m.due_date)}</td><td>${moduleStatusBadge(m)}</td><td>${m.signoff_date ? fmtDate(m.signoff_date) : "-"}</td><td>${m.video_url ? `<a href="${m.video_url}" target="_blank" rel="noopener noreferrer">Link</a>` : '-'}</td></tr>`).join("")}
+        </tbody>
+      </table>
+      ${withReflections.length>0 ? `
+        <h3 style="margin-top:22px;">Submitted summaries (${withReflections.length})</h3>
+        <div>
+          ${withReflections.map(m=>`
+            <div style="margin-bottom:12px; padding:12px 14px; background:var(--bg); border-radius:8px; border-left:3px solid var(--accent);">
+              <div style="font-size:12px; font-weight:700; color:var(--navy); margin-bottom:4px;">Module ${m.module_index}: ${m.title}</div>
+              <div style="font-size:11px; color:var(--muted); margin-bottom:6px;">Submitted ${fmtDate(m.completed_date)}${m.signoff_date ? ' &middot; Signed off '+fmtDate(m.signoff_date) : ' &middot; Awaiting sign-off'}</div>
+              <div style="font-size:13px; color:var(--text);">${m.reflection}</div>
+            </div>
+          `).join("")}
+        </div>
+      ` : ""}
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="exportEmpBtn">Export transcript (CSV)</button>
+        <button class="btn btn-primary" id="closeBtn" style="width:auto;">Close</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  document.getElementById("closeBtn").onclick = ()=> overlay.remove();
+  document.getElementById("exportEmpBtn").onclick = ()=> exportEmployeeCSV(emp);
+}
+
+// ---------- Add / Edit employee form (full admin control) ----------
+function openEmployeeForm(empId){
+  const isEdit = !!empId;
+  const emp = isEdit ? EMPLOYEES_CACHE.find(e=>e.id===empId) : null;
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay";
+  overlay.innerHTML = `
+    <div class="modal">
+      <h3>${isEdit ? "Edit employee" : "Add new employee"}</h3>
+      <div class="sub">${isEdit ? "Update profile details, reset their password, or deactivate them." : "Creates a profile and assigns the full 40-module curriculum based on their start date."}</div>
+      <div class="form-grid">
+        <div class="field full"><label>Full name</label><input type="text" id="fName" value="${isEdit?emp.name:''}" placeholder="e.g. Priya Sharma" /></div>
+        <div class="field full"><label>Email address</label><input type="email" id="fEmail" value="${isEdit?(emp.email||''):''}" placeholder="e.g. priya.sharma@example.com" /></div>
+        <div class="field"><label>Username (for login)</label><input type="text" id="fUser" value="${isEdit?emp.username:''}" placeholder="e.g. psharma" /></div>
+        <div class="field"><label>${isEdit ? "Reset password" : "Password"}</label><input type="text" id="fPass" placeholder="${isEdit ? 'Leave blank to keep current' : 'Set initial password'}" /></div>
+        <div class="field"><label>Job title / role</label><input type="text" id="fRole" value="${isEdit?emp.role:'Java/J2EE Developer'}" /></div>
+        <div class="field"><label>STEM OPT start date</label><input type="date" id="fStart" value="${isEdit?emp.start_date:''}" /></div>
+        ${isEdit ? `<div class="field"><label>Status</label><select id="fActive"><option value="true" ${emp.active?'selected':''}>Active</option><option value="false" ${!emp.active?'selected':''}>Inactive</option></select></div>` : ""}
+      </div>
+      ${isEdit ? `<div class="field" style="margin-top:8px;"><label><input type="checkbox" id="fReset" style="width:auto; margin-right:6px;"/>Reset all training progress (re-generates schedule from start date, clears completions)</label></div>` : ""}
+      <div class="modal-actions" style="justify-content:space-between;">
+        <div>${isEdit ? `<button class="btn btn-danger btn-sm" id="deleteBtn" type="button">Delete employee</button>` : ""}</div>
+        <div style="display:flex; gap:10px;">
+          <button class="btn btn-secondary" id="cancelBtn" type="button">Cancel</button>
+          <button class="btn btn-primary" id="saveBtn" style="width:auto;" type="button">${isEdit?"Save changes":"Create employee"}</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  document.getElementById("cancelBtn").onclick = ()=> overlay.remove();
+
+  if(isEdit){
+    document.getElementById("deleteBtn").onclick = async ()=>{
+      if(!confirm(`Permanently delete ${emp.name} and all their training records? This cannot be undone.`)) return;
+      const ok = await dbDeleteEmployee(emp.id);
+      if(ok){ showToast("Employee deleted"); overlay.remove(); renderSupervisorView(); }
+    };
+  }
+
+  document.getElementById("saveBtn").onclick = async ()=>{
+    const name = document.getElementById("fName").value.trim();
+    const email = document.getElementById("fEmail").value.trim();
+    const username = document.getElementById("fUser").value.trim();
+    const pass = document.getElementById("fPass").value;
+    const roleVal = document.getElementById("fRole").value.trim();
+    const start = document.getElementById("fStart").value;
+
+    if(!name || !username || !start || (!isEdit && !pass)){
+      showToast("Please fill in all required fields", true); return;
+    }
+    if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+      showToast("Please enter a valid email address", true); return;
+    }
+
+    const saveBtn = document.getElementById("saveBtn");
+    saveBtn.disabled = true; saveBtn.textContent = "Saving...";
+
+    if(isEdit){
+      const fields = {name, email: email||null, username, role: roleVal, start_date: start, active: document.getElementById("fActive").value === "true"};
+      if(pass) fields.password = pass;
+      const ok = await dbUpdateEmployee(emp.id, fields);
+      if(ok){
+        const doReset = document.getElementById("fReset").checked;
+        if(doReset) await dbResetEmployeeProgress(emp.id, start);
+        showToast("Employee updated"); overlay.remove(); renderSupervisorView();
+      } else { saveBtn.disabled=false; saveBtn.textContent="Save changes"; }
+    } else {
+      const created = await dbCreateEmployeeWithModules({name, email, username, password:pass, role:roleVal, startDate:start});
+      if(created){ showToast("Employee created"); overlay.remove(); renderSupervisorView(); }
+      else { saveBtn.disabled=false; saveBtn.textContent="Create employee"; }
+    }
+  };
+}
+
+// ---------- CSV export ----------
+function csvEscape(s){ if(s==null) return ""; return `"${String(s).replace(/"/g,'""')}"`; }
+function downloadCSV(filename, rows){
+  const csv = rows.map(r=>r.map(csvEscape).join(",")).join("\n");
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+function exportEmployeeCSV(emp){
+  const rows = [["Employee","Role","Start Date","Module #","Topic","Due Date","Status","Completed Date","Supervisor Signoff Date","Reflection"]];
+  emp.modules.forEach(m=> rows.push([emp.name, emp.role, emp.start_date, m.module_index, m.title, m.due_date, m.status, m.completed_date||"", m.signoff_date||"", m.reflection||""]));
+  downloadCSV(`Adiroha_${emp.name.replace(/\s+/g,'_')}_Training_Transcript.csv`, rows);
+  showToast("Transcript exported");
+}
+function exportCompanyCSV(){
+  const rows = [["Employee","Role","Start Date","Module #","Topic","Due Date","Status","Completed Date","Supervisor Signoff Date","Reflection"]];
+  EMPLOYEES_CACHE.forEach(emp=> emp.modules.forEach(m=> rows.push([emp.name, emp.role, emp.start_date, m.module_index, m.title, m.due_date, m.status, m.completed_date||"", m.signoff_date||"", m.reflection||""])));
+  downloadCSV(`Adiroha_Company_Training_Log_${todayStr()}.csv`, rows);
+  showToast("Company-wide log exported");
+}
+
+// ================= MAIN RENDER =================
+function render(){
+  if(!CURRENT_USER){ renderLogin(); return; }
+  if(CURRENT_USER.role==="employee") renderEmployeeView();
+  else renderSupervisorView();
+}
+
+(async function init(){
+  root.innerHTML = `<div class="loading-screen"><div class="spinner"></div>Connecting to database...</div>`;
+  try{
+    await sb.from("supervisor").select("id").limit(1);
+    render();
+  }catch(e){
+    root.innerHTML = `<div class="loading-screen"><div style="color:#A32D2D; max-width:400px; text-align:center;">Could not connect to the database. Check your internet connection and reload the page.</div></div>`;
+  }
+})();
+</script>
+</body>
+</html>
